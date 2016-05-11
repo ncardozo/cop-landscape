@@ -1,0 +1,25 @@
+[
+{ 
+	"language": "Context Traits",
+	"base": "JavaScript",
+	"instance": ["Object instance"],
+	"cop-instance": true,
+	"stateful": "no"
+},
+{ 
+	"language": "ContextJS",
+	"base": "JavaScript",
+	"instance": ["user defined to instances, threads, objects"],
+	"cop-instance": false,
+	"stateful": "yes"
+},
+{ 
+	"language": "EventCJ",
+	"base": "Java",
+	"instance": "Object instance",
+	"cop-instance": false,
+	"stateful": "no"
+}
+]
+
+	

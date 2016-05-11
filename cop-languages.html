@@ -1,0 +1,160 @@
+<!-- START SIGMA IMPORTS -->
+<script src="./libs/sigma.min.js"></script>
+<script type="text/javascript" src="./cop-langs.json"></script>
+
+<!-- END SIGMA IMPORTS -->
+<script src="./libs/plugins/sigma.plugins.animate.min.js"></script>
+<style>
+  #container {
+	  min-height:100%;
+	  position:relative;
+  }
+  #title {
+    padding:10px;
+  }
+  #graph-container {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    position: absolute;
+    padding-bottom:100px;
+  }
+  #footer {
+     width:100%;
+     height:50px;
+     position:absolute;
+     bottom:0;
+     left:0;
+  }
+</style>
+<div id="container">
+  <div id="Title">
+    <center><h2>COP languages landscape visualization </h2></center>
+  </div>
+  <div id="graph-container"></div>
+  <div id="footer"> </div>
+</div>
+<script>
+/**
+ * This example shows how to use the sigma.plugins.animate plugin. It
+ * creates a random graph with two different views:
+ *
+ * The circular view displays the nodes on a circle, with each node
+ * having a random color and a random size.
+ *
+ * The grid view displays every nodes with the same size, and on a grid.
+ *
+ * Every two seconds, the graph will be animated from a view to the other
+ * one, in a one second animation.
+ */
+ function loadJSON(callback) {
+   var xobj = new XMLHttpRequest();
+   xobj.overrideMimeType("application/json");
+   xobj.open('GET', './cop-langs.json', true);
+   xobj.onreadystatechange = function () {
+     if (xobj.readyState == 4 ) {//&& xobj.status == "200") {
+      callback(xobj.responseText);
+    }
+  }
+  xobj.send(null);
+}
+
+var languages = [];
+var graph = {
+  nodes: [],
+  edges: []
+};
+ // Call to function with anonymous callback
+loadJSON(function(response) {
+  // Do Something with the response e.g.
+  languages = JSON.parse(response);
+  generateButtons();
+  generateNodes();
+  displayGraph();
+});
+
+function generateEdges() {
+  /*
+  for (i = 0; i < E; i++)
+    g.edges.push({
+      id: 'e' + i,
+      source: 'n' + (Math.random() * N | 0),
+      target: 'n' + (Math.random() * N | 0)
+    });
+    */
+}
+
+// Generate graph nodes from the available languages:
+function generateNodes() {
+  var o, L = 10, N = 20;
+  for (var i = 0; i < languages.length; i++) {
+    o = {
+      id: 'n' + i,
+      label: languages[i].language,
+      circular_x: L * Math.cos(Math.PI * 2 * i / N - Math.PI / 2),
+      circular_y: L * Math.sin(Math.PI * 2 * i / N - Math.PI / 2),
+      circular_size: Math.random(),
+      circular_color: '#' + (
+        Math.floor(Math.random() * 16777215).toString(16) + '000000'
+      ).substr(0, 6),
+      grid_x: i % L,
+      grid_y: Math.floor(i / L),
+      grid_size: 1,
+      grid_color: '#ccc'
+    };
+    ['x', 'y', 'size', 'color'].forEach(function(val) {
+      o[val] = o['grid_' + val];
+    });
+    graph.nodes.push(o);
+  }
+};
+
+function animate() {
+  alert('Clicked');
+  generateEdges();
+};
+
+function displayGraph() {
+var i,
+    s,
+    step = 0;
+// Instantiate sigma:
+s = new sigma({
+  graph: graph,
+  container: 'graph-container',
+/*
+  settings: {
+    animationsTime: 1000
+  }
+  */
+});
+/*
+setInterval(function() {
+  var prefix = ['grid_', 'circular_'][step = +!step];
+  sigma.plugins.animate(
+    s,
+    {
+      x: prefix + 'x',
+      y: prefix + 'y',
+      size: prefix + 'size',
+      color: prefix + 'color'
+    }
+  );
+}, 2000);
+*/
+}
+
+function generateButtons() {
+  for(key in languages[0]) {
+	   if(key != "language") {
+       var buttonnode = document.createElement('input');
+       buttonnode.setAttribute('type','button');
+       buttonnode.setAttribute('name',key);
+       buttonnode.setAttribute('value',key);
+       buttonnode.setAttribute('onclick', "animate()");
+       document.getElementById("footer").appendChild(buttonnode);
+     }
+   }
+};
+</script>

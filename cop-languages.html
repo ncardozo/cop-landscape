@@ -1,9 +1,12 @@
-<!-- START SIGMA IMPORTS -->
+<!-- START IMPORTS -->
 <script src="./libs/sigma.min.js"></script>
-<script type="text/javascript" src="./cop-langs.json"></script>
-
-<!-- END SIGMA IMPORTS -->
 <script src="./libs/plugins/sigma.plugins.animate.min.js"></script>
+<script src="./libs/traits.js"></script>
+<script src="./libs/underscore.js"></script>
+<script src="./libs/context-traits.js"></script>
+<script type="text/javascript" src="./cop-langs.json"></script>
+<!-- END  IMPORTS -->
+
 <style>
   #container {
 	  min-height:100%;
@@ -28,6 +31,7 @@
      left:0;
   }
 </style>
+
 <div id="container">
   <div id="Title">
     <center><h2>COP languages landscape visualization </h2></center>
@@ -35,20 +39,10 @@
   <div id="graph-container"></div>
   <div id="footer"> </div>
 </div>
+
 <script>
-/**
- * This example shows how to use the sigma.plugins.animate plugin. It
- * creates a random graph with two different views:
- *
- * The circular view displays the nodes on a circle, with each node
- * having a random color and a random size.
- *
- * The grid view displays every nodes with the same size, and on a grid.
- *
- * Every two seconds, the graph will be animated from a view to the other
- * one, in a one second animation.
- */
- function loadJSON(callback) {
+
+function loadJSON(callback) {
    var xobj = new XMLHttpRequest();
    xobj.overrideMimeType("application/json");
    xobj.open('GET', './cop-langs.json', true);
@@ -61,34 +55,100 @@
 }
 
 var languages = [];
+var contexts = [];
 var graph = {
   nodes: [],
   edges: []
 };
+
+
+UIElements = Trait({
+  displayGraph: function() {
+    var i, s, step = 0;
+    // Instantiate sigma:
+    s = new sigma({
+      graph: graph,
+      container: 'graph-container',
+    });
+    /*
+    setInterval(function() {
+      var prefix = ['grid_', 'circular_'][step = +!step];
+      sigma.plugins.animate(
+        s,
+        {
+          x: prefix + 'x',
+          y: prefix + 'y',
+          size: prefix + 'size',
+          color: prefix + 'color'
+        }
+      );
+    }, 2000);
+    */
+  },
+  generateEdges: function() {
+    //console.log("edges");
+      /*
+      for (i = 0; i < E; i++)
+        g.edges.push({
+          id: 'e' + i,
+          source: 'n' + (Math.random() * N | 0),
+          target: 'n' + (Math.random() * N | 0)
+        });
+        */
+  }
+});
+
+var ui = Trait.create(Object.prototype, UIElements);
+
  // Call to function with anonymous callback
 loadJSON(function(response) {
   // Do Something with the response e.g.
   languages = JSON.parse(response);
   generateButtons();
+  generateContexts()
   generateNodes();
-  displayGraph();
+  ui.displayGraph();
 });
 
-function generateEdges() {
-  /*
-  for (i = 0; i < E; i++)
-    g.edges.push({
-      id: 'e' + i,
-      source: 'n' + (Math.random() * N | 0),
-      target: 'n' + (Math.random() * N | 0)
-    });
-    */
+function generateContexts() {
+  for(key in languages[0]) {
+     if(key != "language") {
+       contexts[contexts.length] = new Context({ name: key});
+     }
+   }
+};
+
+function generateButtons() {
+  for(key in languages[0]) {
+	   if(key != "language") {
+       var buttonnode = document.createElement('input');
+       buttonnode.setAttribute('type','button');
+       buttonnode.setAttribute('name',key);
+       buttonnode.setAttribute('value',key);
+       buttonnode.setAttribute('onclick', "operation(this.name); animate()");
+       document.getElementById("footer").appendChild(buttonnode);
+     }
+   }
+};
+
+function operation(buttonname) {
+  for(var i=0; i<contexts.length; i++) {
+    if(buttonname == contexts[i].name()) {
+      alert(contexts[i].name() + " Context activation");
+      if(contexts[i].isActive())
+        contexts[i].deactivate();
+      else {
+        contexts[i].activate();
+      }
+    }
+  }
+  console.log(contexts);
 }
 
 // Generate graph nodes from the available languages:
 function generateNodes() {
-  var o, L = 10, N = 20;
-  for (var i = 0; i < languages.length; i++) {
+  var o, L = 100, N = languages.length;
+  for (var i = 0; i < N; i++) {
     o = {
       id: 'n' + i,
       label: languages[i].language,
@@ -115,46 +175,4 @@ function animate() {
   generateEdges();
 };
 
-function displayGraph() {
-var i,
-    s,
-    step = 0;
-// Instantiate sigma:
-s = new sigma({
-  graph: graph,
-  container: 'graph-container',
-/*
-  settings: {
-    animationsTime: 1000
-  }
-  */
-});
-/*
-setInterval(function() {
-  var prefix = ['grid_', 'circular_'][step = +!step];
-  sigma.plugins.animate(
-    s,
-    {
-      x: prefix + 'x',
-      y: prefix + 'y',
-      size: prefix + 'size',
-      color: prefix + 'color'
-    }
-  );
-}, 2000);
-*/
-}
-
-function generateButtons() {
-  for(key in languages[0]) {
-	   if(key != "language") {
-       var buttonnode = document.createElement('input');
-       buttonnode.setAttribute('type','button');
-       buttonnode.setAttribute('name',key);
-       buttonnode.setAttribute('value',key);
-       buttonnode.setAttribute('onclick', "animate()");
-       document.getElementById("footer").appendChild(buttonnode);
-     }
-   }
-};
 </script>

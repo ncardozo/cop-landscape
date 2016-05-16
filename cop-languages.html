@@ -3,7 +3,7 @@
 <script src="./libs/plugins/sigma.plugins.animate.min.js"></script>
 <script src="./libs/traits.js"></script>
 <script src="./libs/underscore.js"></script>
-<script src="./libs/context-traits.js"></script>
+<script src="./libs/context-traits.min.js"></script>
 <script type="text/javascript" src="./cop-langs.json"></script>
 <!-- END  IMPORTS -->
 
@@ -16,12 +16,12 @@
     padding:10px;
   }
   #graph-container {
-    top: 0;
+    top: 20px;
     bottom: 0;
     left: 0;
     right: 0;
-    position: absolute;
-    padding-bottom:100px;
+    width: 100%;
+    padding-bottom:300px;
   }
   #footer {
      width:100%;
@@ -56,53 +56,79 @@ function loadJSON(callback) {
 
 var languages = [];
 var contexts = [];
-var graph = {
+var g = {
   nodes: [],
   edges: []
-};
-
+}
+var s;
 
 UIElements = Trait({
   displayGraph: function() {
-    var i, s, step = 0;
     // Instantiate sigma:
-    s = new sigma({
-      graph: graph,
-      container: 'graph-container',
-    });
-    /*
-    setInterval(function() {
-      var prefix = ['grid_', 'circular_'][step = +!step];
-      sigma.plugins.animate(
-        s,
-        {
-          x: prefix + 'x',
-          y: prefix + 'y',
-          size: prefix + 'size',
-          color: prefix + 'color'
-        }
-      );
-    }, 2000);
-    */
+    if(s == null) {
+      s = new sigma({
+        graph: g,
+        container: 'graph-container'
+      });
+      s.settings({
+        immutable: false,
+        clone: false
+      });
+    }
+    s.refresh();
+    this.animation(s);
+    s.refresh();
+  },
+  animation: function(s) {
+    console.log("Base animation called");
+    sigma.plugins.animate(
+      s,
+      {
+        x: 'grid_x',
+        y: 'grid_y',
+      }
+    );
   },
   generateEdges: function() {
-    //console.log("edges");
-      /*
-      for (i = 0; i < E; i++)
-        g.edges.push({
-          id: 'e' + i,
-          source: 'n' + (Math.random() * N | 0),
-          target: 'n' + (Math.random() * N | 0)
-        });
-        */
+    console.log("Base edges called");
+    //g.edges = [];
   }
 });
 
-var ui = Trait.create(Object.prototype, UIElements);
+UnderlyingTechnique = Trait({
+  generateEdges: function() {
+    g.edges = [];//this.proceed();
+    console.log("Techniques edges called");
+    for(var i=0; i<languages.length; i++) {
+      for(var j=i; j<languages.length; j++) {
+        if(i != j && languages[i].technique == languages[j].technique) {
+          s.graph.addEdge({
+            id: 'e' + languages[i].language + "-" + languages[j].language,
+            source: languages[i].language,
+            target: languages[j].language,
+          });
+        }
+      }
+    }
+  },
+  animation: function(s) {
+    console.log("Animation technique method called");
+    sigma.plugins.animate(
+      s,
+      {
+        x: 'circular_x',
+        y: 'circular_y',
+      }
+    );
+  }
+});
 
- // Call to function with anonymous callback
+var ui = Object.create(Object.prototype, UIElements);
+
+/****
+ * Anonymous function used to manage the data loaded from a file
+ */
 loadJSON(function(response) {
-  // Do Something with the response e.g.
   languages = JSON.parse(response);
   generateButtons();
   generateContexts()
@@ -113,9 +139,11 @@ loadJSON(function(response) {
 function generateContexts() {
   for(key in languages[0]) {
      if(key != "language") {
-       contexts[contexts.length] = new Context({ name: key});
+       contexts[contexts.length] = new Context({ name: key });
+       //error adapting all contexts to the same trait
+       contexts[contexts.length - 1].adapt(ui, UnderlyingTechnique);
      }
-   }
+  }
 };
 
 function generateButtons() {
@@ -125,7 +153,7 @@ function generateButtons() {
        buttonnode.setAttribute('type','button');
        buttonnode.setAttribute('name',key);
        buttonnode.setAttribute('value',key);
-       buttonnode.setAttribute('onclick', "operation(this.name); animate()");
+       buttonnode.setAttribute('onclick', "operation(this.name)");
        document.getElementById("footer").appendChild(buttonnode);
      }
    }
@@ -134,30 +162,31 @@ function generateButtons() {
 function operation(buttonname) {
   for(var i=0; i<contexts.length; i++) {
     if(buttonname == contexts[i].name()) {
-      alert(contexts[i].name() + " Context activation");
-      if(contexts[i].isActive())
+      if(contexts[i].isActive()) {
         contexts[i].deactivate();
-      else {
+        console.log(contexts[i].name() + " Context deactivated");
+      } else {
         contexts[i].activate();
+        console.log(contexts[i].name() + " Context activated");
       }
     }
   }
-  console.log(contexts);
+  drawEdges();
 }
 
-// Generate graph nodes from the available languages:
+/***
+ * Generate graph nodes from the available languages:
+ */
 function generateNodes() {
-  var o, L = 100, N = languages.length;
+  var o, L = 5, N = languages.length;
   for (var i = 0; i < N; i++) {
     o = {
-      id: 'n' + i,
+      id: languages[i].language,
       label: languages[i].language,
       circular_x: L * Math.cos(Math.PI * 2 * i / N - Math.PI / 2),
       circular_y: L * Math.sin(Math.PI * 2 * i / N - Math.PI / 2),
-      circular_size: Math.random(),
-      circular_color: '#' + (
-        Math.floor(Math.random() * 16777215).toString(16) + '000000'
-      ).substr(0, 6),
+      circular_size: 1,
+      circular_color: '#ccc',
       grid_x: i % L,
       grid_y: Math.floor(i / L),
       grid_size: 1,
@@ -166,13 +195,13 @@ function generateNodes() {
     ['x', 'y', 'size', 'color'].forEach(function(val) {
       o[val] = o['grid_' + val];
     });
-    graph.nodes.push(o);
+    g.nodes.push(o);
   }
 };
 
-function animate() {
-  alert('Clicked');
-  generateEdges();
+function drawEdges() {
+  ui.generateEdges();
+  ui.displayGraph();
 };
 
 </script>

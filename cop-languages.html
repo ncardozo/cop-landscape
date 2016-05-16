@@ -91,14 +91,19 @@ UIElements = Trait({
   },
   generateEdges: function() {
     console.log("Base edges called");
-    //g.edges = [];
+    this.cleanEdges();
+  },
+  cleanEdges: function() {
+    for(var i=0; i< s.graph.edges().length; i++) {
+      s.graph.dropEdge(s.graph.edges()[i].id);
+    }
   }
 });
 
 UnderlyingTechnique = Trait({
   generateEdges: function() {
-    g.edges = [];//this.proceed();
     console.log("Techniques edges called");
+    this.cleanEdges();
     for(var i=0; i<languages.length; i++) {
       for(var j=i; j<languages.length; j++) {
         if(i != j && languages[i].technique == languages[j].technique) {

@@ -1,1 +1,213 @@
-My page
+<!-- START IMPORTS -->
+<script src="./libs/sigma.min.js"></script>
+<script src="./libs/plugins/sigma.plugins.animate.min.js"></script>
+<script src="./libs/traits.js"></script>
+<script src="./libs/underscore.js"></script>
+<script src="./libs/context-traits.min.js"></script>
+<script type="text/javascript" src="./cop-langs.json"></script>
+<!-- END  IMPORTS -->
+
+<style>
+  #container {
+	  min-height:100%;
+	  position:relative;
+  }
+  #title {
+    padding:10px;
+  }
+  #graph-container {
+    top: 20px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding-bottom:300px;
+  }
+  #footer {
+     width:100%;
+     height:50px;
+     position:absolute;
+     bottom:0;
+     left:0;
+  }
+</style>
+
+<div id="container">
+  <div id="Title">
+    <center><h2>COP languages landscape visualization </h2></center>
+  </div>
+  <div id="graph-container"></div>
+  <div id="footer"> </div>
+</div>
+
+<script>
+
+function loadJSON(callback) {
+   var xobj = new XMLHttpRequest();
+   xobj.overrideMimeType("application/json");
+   xobj.open('GET', './cop-langs.json', true);
+   xobj.onreadystatechange = function () {
+     if (xobj.readyState == 4 ) {//&& xobj.status == "200") {
+      callback(xobj.responseText);
+    }
+  }
+  xobj.send(null);
+}
+
+var languages = [];
+var contexts = [];
+var g = {
+  nodes: [],
+  edges: []
+}
+var s;
+
+UIElements = Trait({
+  displayGraph: function() {
+    // Instantiate sigma:
+    if(s == null) {
+      s = new sigma({
+        graph: g,
+        container: 'graph-container'
+      });
+      s.settings({
+        immutable: false,
+        clone: false
+      });
+    }
+    s.refresh();
+    this.animation(s);
+    s.refresh();
+  },
+  animation: function(s) {
+    console.log("Base animation called");
+    sigma.plugins.animate(
+      s,
+      {
+        x: 'grid_x',
+        y: 'grid_y',
+      }
+    );
+  },
+  generateEdges: function() {
+    console.log("Base edges called");
+    this.cleanEdges();
+  },
+  cleanEdges: function() {
+    for(var i=0; i< s.graph.edges().length; i++) {
+      s.graph.dropEdge(s.graph.edges()[i].id);
+    }
+  }
+});
+
+UnderlyingTechnique = Trait({
+  generateEdges: function() {
+    console.log("Techniques edges called");
+    this.cleanEdges();
+    for(var i=0; i<languages.length; i++) {
+      for(var j=i; j<languages.length; j++) {
+        if(i != j && languages[i].technique == languages[j].technique) {
+          s.graph.addEdge({
+            id: 'e' + languages[i].language + "-" + languages[j].language,
+            source: languages[i].language,
+            target: languages[j].language,
+          });
+        }
+      }
+    }
+  },
+  animation: function(s) {
+    console.log("Animation technique method called");
+    sigma.plugins.animate(
+      s,
+      {
+        x: 'circular_x',
+        y: 'circular_y',
+      }
+    );
+  }
+});
+
+var ui = Object.create(Object.prototype, UIElements);
+
+/****
+ * Anonymous function used to manage the data loaded from a file
+ */
+loadJSON(function(response) {
+  languages = JSON.parse(response);
+  generateButtons();
+  generateContexts()
+  generateNodes();
+  ui.displayGraph();
+});
+
+function generateContexts() {
+  for(key in languages[0]) {
+     if(key != "language") {
+       contexts[contexts.length] = new Context({ name: key });
+       //error adapting all contexts to the same trait
+       contexts[contexts.length - 1].adapt(ui, UnderlyingTechnique);
+     }
+  }
+};
+
+function generateButtons() {
+  for(key in languages[0]) {
+	   if(key != "language") {
+       var buttonnode = document.createElement('input');
+       buttonnode.setAttribute('type','button');
+       buttonnode.setAttribute('name',key);
+       buttonnode.setAttribute('value',key);
+       buttonnode.setAttribute('onclick', "operation(this.name)");
+       document.getElementById("footer").appendChild(buttonnode);
+     }
+   }
+};
+
+function operation(buttonname) {
+  for(var i=0; i<contexts.length; i++) {
+    if(buttonname == contexts[i].name()) {
+      if(contexts[i].isActive()) {
+        contexts[i].deactivate();
+        console.log(contexts[i].name() + " Context deactivated");
+      } else {
+        contexts[i].activate();
+        console.log(contexts[i].name() + " Context activated");
+      }
+    }
+  }
+  drawEdges();
+}
+
+/***
+ * Generate graph nodes from the available languages:
+ */
+function generateNodes() {
+  var o, L = 5, N = languages.length;
+  for (var i = 0; i < N; i++) {
+    o = {
+      id: languages[i].language,
+      label: languages[i].language,
+      circular_x: L * Math.cos(Math.PI * 2 * i / N - Math.PI / 2),
+      circular_y: L * Math.sin(Math.PI * 2 * i / N - Math.PI / 2),
+      circular_size: 1,
+      circular_color: '#ccc',
+      grid_x: i % L,
+      grid_y: Math.floor(i / L),
+      grid_size: 1,
+      grid_color: '#ccc'
+    };
+    ['x', 'y', 'size', 'color'].forEach(function(val) {
+      o[val] = o['grid_' + val];
+    });
+    g.nodes.push(o);
+  }
+};
+
+function drawEdges() {
+  ui.generateEdges();
+  ui.displayGraph();
+};
+
+</script>
+

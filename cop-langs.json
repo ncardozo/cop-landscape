@@ -1,0 +1,34 @@
+[
+{
+	"language": "Context Traits",
+	"base": "JavaScript",
+	"technique": "Composition",
+	"instance": ["Object instance"],
+	"cop-instance": true,
+	"stateful": "no"
+},
+{
+	"language": "ContextJS",
+	"base": "JavaScript",
+	"technique": "Dispatching",
+	"instance": ["user defined to instances, threads, objects"],
+	"cop-instance": false,
+	"stateful": "yes"
+},
+{
+	"language": "EventCJ",
+	"base": "Java",
+	"technique": "Aspects",
+	"instance": ["Object instance"],
+	"cop-instance": false,
+	"stateful": "no"
+},
+{
+	"language": "ContextErlang",
+	"base": "Erlang",
+	"technique": "Composition",
+	"instance": ["Classes", "Threads"],
+	"cop-instance": false,
+	"stateful": "no"
+}
+]

@@ -11,7 +11,7 @@
 	"language": "ContextJS",
 	"base": "JavaScript",
 	"technique": "Dispatching",
-	"instance": ["user defined to instances, threads, objects"],
+	"instance": ["Instances*", "Threads*", "Objects*"],
 	"cop-instance": false,
 	"stateful": "yes"
 },
@@ -30,5 +30,13 @@
 	"instance": ["Classes", "Threads"],
 	"cop-instance": false,
 	"stateful": "no"
+},
+{
+	"language": "Flute",
+	"base": "Scheme",
+	"technique": "Continuations",
+	"instance": ["Object instance", "Threads"],
+	"cop-instance": false,
+	"stateful": "yes"
 }
 ]

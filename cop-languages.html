@@ -69,7 +69,7 @@ var g = {
 };
 var s;
 
-UIElements = Trait({
+UIElements = {
   displayGraph: function() {
     // Instantiate sigma:
     if(s == null) {
@@ -87,7 +87,7 @@ UIElements = Trait({
     s.refresh();
   },
   animation: function(s) {
-    console.log("Base animation called");
+    console.log("Base animation method called");
     sigma.plugins.animate(
       s,
       {
@@ -98,7 +98,7 @@ UIElements = Trait({
     );
   },
   generateEdges: function() {
-    console.log("Base edges called");
+    console.log("Base edges method called");
     this.cleanEdges();
   },
   cleanEdges: function() {
@@ -106,13 +106,11 @@ UIElements = Trait({
       s.graph.dropEdge(s.graph.edges()[i].id);
     }
   }
-});
-
-var ui = Object.create(Object.prototype, UIElements);
+};
 
 UnderlyingTechnique = Trait({
   generateEdges: function() {
-    console.log("Techniques edges called");
+    console.log("Techniques edges method called");
     this.cleanEdges();
     for(var i=0; i<languages.length; i++) {
       for(var j=i; j<languages.length; j++) {
@@ -127,7 +125,7 @@ UnderlyingTechnique = Trait({
     }
   },
   animation: function(s) {
-    console.log("Animation technique method called");
+    console.log("Technique animation method called");
     sigma.plugins.animate(
       s,
       {
@@ -138,10 +136,9 @@ UnderlyingTechnique = Trait({
   }
 });
 
-
 BaseLanguage = Trait({
   generateEdges: function() {
-    console.log("Base Language edges method called");
+    console.log("BaseLanguage edges method called");
     for(var i=0; i<languages.length; i++) {
       for(var j=i; j<languages.length; j++) {
         if(i != j && languages[i].language == languages[j].language) {
@@ -149,14 +146,15 @@ BaseLanguage = Trait({
             id: 'e' + languages[i].language + "-" + languages[j].language,
             source: languages[i].language,
             target: languages[j].language,
-            color: languageColors.languages[j].language,
+            color: languageColors.languages[j].base,
           });
         }
       }
     }
+    this.proceed();
   },
   animation: function(s) {
-    console.log("Base Language animation method called");
+    console.log("BaseLanguage animation method called");
     sigma.plugins.animate(
       s,
       {
@@ -168,6 +166,8 @@ BaseLanguage = Trait({
   }
 });
 
+var ui = UIElements;//Object.create(Object.prototype, UIElements);
+
 /****
  * Anonymous function used to manage the data loaded from a file
  */
@@ -176,25 +176,26 @@ loadJSON(function(response) {
   generateButtons();
   generateContexts()
   generateNodes();
-  ui.displayGraph();
+  UIElements.displayGraph();
 });
 
 function generateContexts() {
   for(key in languages[0]) {
      if(key != "language") {
        contexts[contexts.length] = new Context({ name: key });
-       addAdaptations(contexts[contexts.length - 1]);
+       addAdaptations(contexts.length - 1);
      }
   }
 };
 
-function addAdaptations(context) {
-  switch (context.name) {
+function addAdaptations(index) {
+  var context = contexts[index];
+  switch (context.name()) {
     case 'technique':
-      context.adapt(ui, UnderlyingTechnique);
+      context.adapt(UIElements, UnderlyingTechnique);
       break;
     case 'base':
-      context.adapt(ui, BaseLanguage);
+      context.adapt(UIElements, BaseLanguage);
       break;
     case 'instance':
       break;
@@ -247,7 +248,7 @@ function generateNodes() {
       circular_x: L * Math.cos(Math.PI * 2 * i / N - Math.PI / 2),
       circular_y: L * Math.sin(Math.PI * 2 * i / N - Math.PI / 2),
       circular_size: 1,
-      circular_color: languageColors[languages[i].language],
+      circular_color: languageColors[languages[i].base],
       grid_x: i % L,
       grid_y: Math.floor(i / L),
       grid_size: 1,
@@ -261,8 +262,8 @@ function generateNodes() {
 };
 
 function drawEdges() {
-  ui.generateEdges();
-  ui.displayGraph();
+  UIElements.generateEdges();
+  UIElements.displayGraph();
 };
 
 </script>

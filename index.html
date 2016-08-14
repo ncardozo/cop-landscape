@@ -56,13 +56,20 @@ function loadJSON(callback) {
 
 var languages = [];
 var contexts = [];
+var languageColors = {
+  "JavaScript": '#006400',
+  "Java": '#8B008B',
+  "Erlang": '#990000',
+  "Objective-C": '#6495ED',
+  "Scheme": '#330066'
+};
 var g = {
   nodes: [],
   edges: []
-}
+};
 var s;
 
-UIElements = Trait({
+UIElements = {
   displayGraph: function() {
     // Instantiate sigma:
     if(s == null) {
@@ -80,17 +87,18 @@ UIElements = Trait({
     s.refresh();
   },
   animation: function(s) {
-    console.log("Base animation called");
+    console.log("Base animation method called");
     sigma.plugins.animate(
       s,
       {
         x: 'grid_x',
         y: 'grid_y',
+        color: 'grid_color',
       }
     );
   },
   generateEdges: function() {
-    console.log("Base edges called");
+    console.log("Base edges method called");
     this.cleanEdges();
   },
   cleanEdges: function() {
@@ -98,11 +106,11 @@ UIElements = Trait({
       s.graph.dropEdge(s.graph.edges()[i].id);
     }
   }
-});
+};
 
 UnderlyingTechnique = Trait({
   generateEdges: function() {
-    console.log("Techniques edges called");
+    console.log("Techniques edges method called");
     this.cleanEdges();
     for(var i=0; i<languages.length; i++) {
       for(var j=i; j<languages.length; j++) {
@@ -117,7 +125,7 @@ UnderlyingTechnique = Trait({
     }
   },
   animation: function(s) {
-    console.log("Animation technique method called");
+    console.log("Technique animation method called");
     sigma.plugins.animate(
       s,
       {
@@ -128,7 +136,37 @@ UnderlyingTechnique = Trait({
   }
 });
 
-var ui = Object.create(Object.prototype, UIElements);
+BaseLanguage = Trait({
+  generateEdges: function() {
+    console.log("BaseLanguage edges method called");
+    for(var i=0; i<languages.length; i++) {
+      for(var j=i; j<languages.length; j++) {
+        if(i != j && languages[i].language == languages[j].language) {
+          s.graph.addEdge({
+            id: 'e' + languages[i].language + "-" + languages[j].language,
+            source: languages[i].language,
+            target: languages[j].language,
+            color: languageColors.languages[j].base,
+          });
+        }
+      }
+    }
+    this.proceed();
+  },
+  animation: function(s) {
+    console.log("BaseLanguage animation method called");
+    sigma.plugins.animate(
+      s,
+      {
+        x: 'circular_x',
+        y: 'circular_y',
+        color: 'circular_color',
+      }
+    );
+  }
+});
+
+var ui = UIElements;//Object.create(Object.prototype, UIElements);
 
 /****
  * Anonymous function used to manage the data loaded from a file
@@ -138,18 +176,37 @@ loadJSON(function(response) {
   generateButtons();
   generateContexts()
   generateNodes();
-  ui.displayGraph();
+  UIElements.displayGraph();
 });
 
 function generateContexts() {
   for(key in languages[0]) {
      if(key != "language") {
        contexts[contexts.length] = new Context({ name: key });
-       //error adapting all contexts to the same trait
-       contexts[contexts.length - 1].adapt(ui, UnderlyingTechnique);
+       addAdaptations(contexts.length - 1);
      }
   }
 };
+
+function addAdaptations(index) {
+  var context = contexts[index];
+  switch (context.name()) {
+    case 'technique':
+      context.adapt(UIElements, UnderlyingTechnique);
+      break;
+    case 'base':
+      context.adapt(UIElements, BaseLanguage);
+      break;
+    case 'instance':
+      break;
+    case 'cop-instance':
+      break;
+    case 'stateful':
+      break;
+    default:
+      break;
+  }
+}
 
 function generateButtons() {
   for(key in languages[0]) {
@@ -191,7 +248,7 @@ function generateNodes() {
       circular_x: L * Math.cos(Math.PI * 2 * i / N - Math.PI / 2),
       circular_y: L * Math.sin(Math.PI * 2 * i / N - Math.PI / 2),
       circular_size: 1,
-      circular_color: '#ccc',
+      circular_color: languageColors[languages[i].base],
       grid_x: i % L,
       grid_y: Math.floor(i / L),
       grid_size: 1,
@@ -205,9 +262,8 @@ function generateNodes() {
 };
 
 function drawEdges() {
-  ui.generateEdges();
-  ui.displayGraph();
+  UIElements.generateEdges();
+  UIElements.displayGraph();
 };
 
 </script>
-
